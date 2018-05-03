@@ -6,7 +6,9 @@
 /pkg/
 /spec/reports/
 /tmp/
+/.vscode
 Gemfile.lock
+.solargraph.yml
 
 # rspec failure tracking
 .rspec_status
