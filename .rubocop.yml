@@ -1,0 +1,48 @@
+# inherit_from: .rubocop_todo.yml
+
+AllCops:
+  TargetRubyVersion: 2.4
+  Exclude:
+    - 'bin/*'
+    - '*.gemspec'
+
+Lint/AmbiguousBlockAssociation:
+  Exclude:
+    - spec/**/*.rb
+
+Style/BlockDelimiters:
+  EnforcedStyle: braces_for_chaining
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/NonNilCheck:
+  Enabled: false
+
+Naming/VariableNumber:
+  Enabled: false
+
+Naming/HeredocDelimiterNaming:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+  
+Metrics/LineLength:
+  Max: 120
+
+Metrics/MethodLength:
+  Max: 25
+
+Metrics/BlockLength:
+  Enabled: false
+
+Metrics/AbcSize:
+  Enabled: false
+
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+Metrics/PerceivedComplexity:
+  Enabled: false
+

@@ -28,11 +28,11 @@ module TenantCheck
     def message
       <<~EOS
         >>> Query without tenant condition detected!
-        class: #{base_class.to_s}
+        class: #{base_class}
         sql: #{sql}
         stacktrace:
         #{filtered_callers_or_callers.join("\n")}
-        
+
       EOS
     end
   end

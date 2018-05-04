@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "tenant_check/version"
-require "active_support/lazy_load_hooks"
+require 'tenant_check/version'
+require 'active_support/lazy_load_hooks'
 require 'set'
 require 'logger'
 
@@ -10,32 +10,27 @@ module TenantCheck
   autoload :Rack, 'tenant_check/rack'
 
   class << self
-    def enable
-      @enable
-    end
+    attr_reader :enable
 
     def enable=(value)
       @enable = value
-      if value && !@patched
-        @patched = true
-        ActiveSupport.on_load(:active_record) do
-          require 'tenant_check/active_record/extensions'
-          ::TenantCheck::ActiveRecord.apply_patch
 
-          if defined? Rails
-            ::Rails.configuration.middleware.use TenantCheck::Rack
-          end
-        end
+      return if @patched || !value
+      @patched = true
+      ActiveSupport.on_load(:active_record) do
+        require 'tenant_check/active_record/extensions'
+        ::TenantCheck::ActiveRecord.apply_patch
+        ::Rails.configuration.middleware.use TenantCheck::Rack if defined? Rails
       end
     end
-    
+
     def tenant_class=(klass)
       if ::TenantCheck.tenant_class_name != nil && ::TenantCheck.tenant_class_name != klass.name
         raise 'TenantCheck.tenant_class= must be called only once'
       end
       ::TenantCheck.tenant_class_name = klass.name
 
-      klass.reflections.each do |name, reflection|
+      klass.reflections.each do |_, reflection|
         case reflection
         when ::ActiveRecord::Reflection::HasManyReflection, ::ActiveRecord::Reflection::HasOneReflection
           ::TenantCheck.add_association(reflection.klass.arel_table.name, reflection.foreign_key)

@@ -21,9 +21,9 @@ module TenantCheck
         def safe_preloading=(value)
           Thread.current[:tenant_check_safe_preloading] = value
         end
-        
+
         def safe_preload(safe)
-          prev, self.safe_preloading = safe_preloading, true if safe
+          prev, self.safe_preloading = safe_preloading, true if safe # rubocop:disable Style/ParallelAssignment
           yield
         ensure
           self.safe_preloading = prev if safe
@@ -31,12 +31,12 @@ module TenantCheck
       end
 
       private
-      
+
       def check_tenant_safety(sql_descpription = nil)
         return true if TenantSafetyCheck.safe_preloading || klass.name == ::TenantCheck.tenant_class_name
         return true if respond_to?(:proxy_association) && proxy_association.owner._tenant_check_safe
         unless tenant_safe_where_clause?(where_clause)
-          c = caller 
+          c = caller
           lines = c.join("\n")
           unless ::TenantCheck.safe_caller_patterns.any? { |reg| reg.match?(lines) }
             ::TenantCheck.add_notification ::TenantCheck::Notification.new(c, klass, sql_descpription || to_sql)
@@ -51,9 +51,7 @@ module TenantCheck
         equalities = predicates.grep(Arel::Nodes::Equality)
         equalities.any? do |node|
           attribute = node.left
-          if ::TenantCheck.tenant_associations[attribute.relation.name]&.member?(attribute.name)
-            return true
-          end
+          return true if ::TenantCheck.tenant_associations[attribute.relation.name]&.member?(attribute.name)
         end
       end
     end
@@ -77,7 +75,7 @@ module TenantCheck
         result
       end
     end
-    
+
     module RelationExtension
       include TenantSafetyCheck
 
@@ -87,7 +85,7 @@ module TenantCheck
         super
       end
 
-      private 
+      private
 
       def exec_queries(&block)
         return super unless ::TenantCheck.enable_and_started?
@@ -145,15 +143,14 @@ module TenantCheck
           indent_puts(depth + 1, 'wheres=')
           dump_arel(arel.wheres, depth + 1)
         when ::Arel::Nodes::Node
-          indent_puts(depth, "[#{arel.class.to_s}]")
+          indent_puts(depth, "[#{arel.class}]")
         when ::Arel::Attributes::Attribute
-          indent_puts(depth, "[#{arel.class.to_s}]")
+          indent_puts(depth, "[#{arel.class}]")
         end
-
       end
 
       def indent_puts(depth, str)
-        puts "  " * depth + str
+        puts '  ' * depth + str
       end
     end
 

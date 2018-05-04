@@ -6,7 +6,7 @@ RSpec.describe TenantCheck do
       Tenant.first
     }.not_to change { TenantCheck.notifications.size }
   end
-  
+
   it 'does not create notifications when the query have a tenant condition' do
     tenant = Tenant.first
     expect {
@@ -29,7 +29,6 @@ RSpec.describe TenantCheck do
     }.not_to change { TenantCheck.notifications.size }
     puts tasks.size
   end
-
 
   it 'creates a notificaiton when the query does not have a tenant condition' do
     expect {
@@ -73,7 +72,7 @@ RSpec.describe TenantCheck do
         User.includes(:tasks).pluck(:id)
       }.to change { TenantCheck.notifications.size }.by(1)
     end
-    
+
     it 'does not creates notifications when pluck based on tenant class' do
       expect {
         Tenant.pluck(:id)
@@ -113,7 +112,7 @@ RSpec.describe TenantCheck do
     def my_safe_method
       Task.first
     end
-  
+
     around do |ex|
       begin
         prev = TenantCheck.safe_caller_patterns
@@ -203,7 +202,7 @@ RSpec.describe TenantCheck do
       tasks = relation.to_a
       expect(tasks.all?(&:_tenant_check_safe)).to eq true
     end
-    
+
     it 'is false when the collection proxy is based on unsafe record' do
       user = User.first
       expect(user._tenant_check_safe).to be_falsey

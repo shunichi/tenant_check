@@ -9,8 +9,8 @@ module Support
       tenant_2 = Tenant.create!(name: 'tenant 2')
 
       user_1_1 = tenant_1.users.create!(name: 'user 1-1')
-      user_1_2 = tenant_1.users.create!(name: 'user 1-2')
-      user_2_1 = tenant_2.users.create!(name: 'user 2-1')
+      user_1_2 = tenant_1.users.create!(name: 'user 1-2') # rubocop:disable Lint/UselessAssignment
+      user_2_1 = tenant_2.users.create!(name: 'user 2-1') # rubocop:disable Lint/UselessAssignment
 
       tenant_1.tasks.create!(title: 'task 1-1', user: user_1_1)
       tenant_1.tasks.create!(title: 'task 1-2', user: user_1_1)
