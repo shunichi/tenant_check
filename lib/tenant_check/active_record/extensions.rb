@@ -62,7 +62,7 @@ module TenantCheck
       include TenantSafetyCheck
 
       def load_target
-        return super unless ::TenantCheck.started?
+        return super unless ::TenantCheck.enable_and_started?
         return super if loaded?
 
         safe = check_tenant_safety
@@ -90,7 +90,7 @@ module TenantCheck
       private 
 
       def exec_queries(&block)
-        return super unless ::TenantCheck.started?
+        return super unless ::TenantCheck.enable_and_started?
 
         safe = check_tenant_safety
 
@@ -158,7 +158,7 @@ module TenantCheck
     end
 
     class << self
-      def enable
+      def apply_patch
         ::ActiveRecord::Base.include TenantMethodExtension
         ::ActiveRecord::Relation.prepend RelationExtension
         ::ActiveRecord::Associations::CollectionProxy.prepend CollectionProxyExtension

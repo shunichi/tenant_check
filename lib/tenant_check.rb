@@ -9,15 +9,26 @@ module TenantCheck
   autoload :Notification, 'tenant_check/notification'
   autoload :Rack, 'tenant_check/rack'
 
-  if defined? Rails::Railtie
-    class TenantCheckRailtie < Rails::Railtie
-      initializer 'tenant_check.configure_rails_initialization' do |app|
-        app.middleware.use TenantCheck::Rack
+  class << self
+    def enable
+      @enable
+    end
+
+    def enable=(value)
+      @enable = value
+      if value && !@patched
+        @patched = true
+        ActiveSupport.on_load(:active_record) do
+          require 'tenant_check/active_record/extensions'
+          ::TenantCheck::ActiveRecord.apply_patch
+
+          if defined? Rails
+            ::Rails.configuration.middleware.use TenantCheck::Rack
+          end
+        end
       end
     end
-  end
-
-  class << self
+    
     def tenant_class=(klass)
       if ::TenantCheck.tenant_class_name != nil && ::TenantCheck.tenant_class_name != klass.name
         raise 'TenantCheck.tenant_class= must be called only once'
@@ -44,10 +55,14 @@ module TenantCheck
       tenant_associations[table].add(foreign_key)
     end
 
-    def safe_caller_patterns
-      @safe_caller_patterns ||= [
+    def default_safe_caller_patterns
+      [
         /^.*devise.*`serialize_from_session'.*$/,
       ]
+    end
+
+    def safe_caller_patterns
+      @safe_caller_patterns ||= default_safe_caller_patterns
     end
 
     def start
@@ -62,6 +77,10 @@ module TenantCheck
 
     def started?
       Thread.current[:tenant_check_start]
+    end
+
+    def enable_and_started?
+      enable && started?
     end
 
     def notifications
@@ -82,9 +101,4 @@ module TenantCheck
       @logger ||= defined?(Rails) ? Rails.logger : Logger.new(STDOUT)
     end
   end
-end
-
-ActiveSupport.on_load(:active_record) do
-  require 'tenant_check/active_record/extensions'
-  ::TenantCheck::ActiveRecord.enable
 end

@@ -33,6 +33,7 @@ RSpec.configure do |config|
     Support::SqliteSeed.setup_db
     Support::SqliteSeed.seed_db
     ::TenantCheck.tenant_class = Tenant
+    ::TenantCheck.enable = true
   end
 
   config.before do
