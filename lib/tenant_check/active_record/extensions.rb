@@ -80,6 +80,7 @@ module TenantCheck
       include TenantSafetyCheck
 
       def pluck(*column_names)
+        return super unless ::TenantCheck.enable_and_started?
         return super if has_include?(column_names.first)
         check_tenant_safety('pluck')
         super

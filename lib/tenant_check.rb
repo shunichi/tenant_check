@@ -75,7 +75,22 @@ module TenantCheck
     end
 
     def enable_and_started?
-      enable && started?
+      enable && started? && !temporally_disabled?
+    end
+
+    def temporally_disabled?
+      Thread.current[:tenant_check_temporally_disabled]
+    end
+
+    def temporally_disabled=(value)
+      Thread.current[:tenant_check_temporally_disabled] = value
+    end
+
+    def ignored
+      prev, self.temporally_disabled = temporally_disabled?, true # rubocop:disable Style/ParallelAssignment
+      yield
+    ensure
+      self.temporally_disabled = prev
     end
 
     def notifications
