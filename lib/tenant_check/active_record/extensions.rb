@@ -32,14 +32,14 @@ module TenantCheck
 
       private
       
-      def check_tenant_safety
+      def check_tenant_safety(sql_descpription = nil)
         return true if TenantSafetyCheck.safe_preloading || klass.name == ::TenantCheck.tenant_class_name
         return true if respond_to?(:proxy_association) && proxy_association.owner._tenant_check_safe
         unless tenant_safe_where_clause?(where_clause)
           c = caller 
           lines = c.join("\n")
           unless ::TenantCheck.safe_caller_patterns.any? { |reg| reg.match?(lines) }
-            ::TenantCheck.add_notification ::TenantCheck::Notification.new(c, klass, to_sql)
+            ::TenantCheck.add_notification ::TenantCheck::Notification.new(c, klass, sql_descpription || to_sql)
             return false
           end
         end
@@ -80,6 +80,12 @@ module TenantCheck
     
     module RelationExtension
       include TenantSafetyCheck
+
+      def pluck(*column_names)
+        return super if has_include?(column_names.first)
+        check_tenant_safety('pluck')
+        super
+      end
 
       private 
 

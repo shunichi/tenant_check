@@ -48,7 +48,7 @@ RSpec.describe TenantCheck do
     }.to change { TenantCheck.notifications.size }.by(1)
   end
 
-  it 'creates a notification when eager load query without tenant condition' do
+  it 'creates a notification when eager load query without tenant conditions' do
     expect {
       Task.all.eager_load(:user).to_a
     }.to change { TenantCheck.notifications.size }.by(1)
@@ -59,6 +59,54 @@ RSpec.describe TenantCheck do
     expect {
       tenant.tasks.eager_load(:user).to_a
     }.not_to change { TenantCheck.notifications.size }
+  end
+
+  describe 'pluck' do
+    it 'creates a notification when pluck without tenant conditions' do
+      expect {
+        User.pluck(:id)
+      }.to change { TenantCheck.notifications.size }.by(1)
+    end
+
+    it 'creates a notification when pluck with includes without tenant conditions' do
+      expect {
+        User.includes(:tasks).pluck(:id)
+      }.to change { TenantCheck.notifications.size }.by(1)
+    end
+    
+    it 'does not creates notifications when pluck based on tenant class' do
+      expect {
+        Tenant.pluck(:id)
+      }.not_to change { TenantCheck.notifications.size }
+    end
+
+    it 'does not creates notifications when pluck on the collection proxy owned by tenant record' do
+      tenant = Tenant.first
+      expect {
+        tenant.tasks.pluck(:id)
+      }.not_to change { TenantCheck.notifications.size }
+    end
+
+    it 'does not creates notifications when pluck on the association relation owned by tenant record' do
+      tenant = Tenant.first
+      expect {
+        tenant.tasks.where('id > 0').pluck(:id)
+      }.not_to change { TenantCheck.notifications.size }
+    end
+
+    it 'does not creates notifications when pluck on the collection proxy owned by a safe record' do
+      user = Tenant.first.users.first
+      expect {
+        user.tasks.pluck(:id)
+      }.not_to change { TenantCheck.notifications.size }
+    end
+
+    it 'does not creates notifications when pluck on the association relation owned by a safe record' do
+      user = Tenant.first.users.first
+      expect {
+        user.tasks.where('id > 0').pluck(:id)
+      }.not_to change { TenantCheck.notifications.size }
+    end
   end
 
   context 'when safe_caller_patterns set' do
