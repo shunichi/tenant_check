@@ -101,6 +101,10 @@ module TenantCheck
       notifications.add(notification) if started?
     end
 
+    def notification?
+      !notifications.empty?
+    end
+
     def output_notifications
       notifications.each do |notification|
         logger.warn(notification.message)
