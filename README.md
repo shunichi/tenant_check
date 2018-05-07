@@ -64,7 +64,7 @@ current_user.tasks.to_a # devise current_user is safe and the query based on it 
 ### temporarlly disable tenant check
 
 ```ruby
-users = TenantCheck.ignored { User.all }
+users = TenantCheck.ignored { User.all.to_a }
 ```
 
 ## Development
