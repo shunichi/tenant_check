@@ -32,6 +32,35 @@ if Rails.env.development?
 end
 ```
 
+```ruby
+class Tenant < ApplicationRecord
+  has_many :users
+  has_many :tasks
+end
+
+class Task < ApplicationRecord
+  belongs_to :tenant
+  belongs_to :user, optional: true
+end
+
+class User < ApplicationRecord
+  belongs_to :tenant
+  has_many :tasks
+end
+```
+
+```ruby
+# unsafe queries. (output warnings to log)
+user = User.first # the query without tenant is unsafe.
+user.tasks.to_a # the query based on unsafe record is unsafe.
+
+# safe queries. (no warnings)
+tenant = Tenant.first # tenant query is safe.
+tenant_user = tenant.users.first # the query based on tenant is safe.
+tenant_user.tasks.to_a # the query based on safe record is safe.
+current_user.tasks.to_a # devise current_user is safe and the query based on it is safe.
+```
+
 ### temporarlly disable tenant check
 
 ```ruby
@@ -46,7 +75,6 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## TODO
 - test for various rails versions
-- support `eager_load`
 - support calculation methods
 
 ## Contributing
