@@ -27,7 +27,7 @@ Or install it yourself as:
 ```ruby
 # in config/initializers/tenant_check.rb
 if Rails.env.development?
-  TenantCheck.tenant_class = YourTenantClass
+  TenantCheck.tenant_class = Tenant # your tenant class
   TenantCheck.enable = true
 end
 ```
