@@ -11,7 +11,7 @@ This gem is in an early stage of development.
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'tenant_check', group: :development
+gem 'tenant_check'
 ```
 
 And then execute:
