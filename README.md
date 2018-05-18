@@ -1,4 +1,5 @@
 # TenantCheck
+[![Build Status](https://travis-ci.org/shunichi/tenant_check.svg?branch=master)](https://travis-ci.org/shunichi/tenant_check)
 
 Detect tenant unsafe queries in Rails app.
 
@@ -52,16 +53,16 @@ end
 ```ruby
 # unsafe queries. (output warnings to log)
 user = User.first # the query without tenant is unsafe.
-user.tasks.to_a # the query based on unsafe record is unsafe.
+user.tasks.to_a # the query based on an unsafe record is unsafe.
 
 # safe queries. (no warnings)
 tenant = Tenant.first # tenant query is safe.
 tenant_user = tenant.users.first # the query based on tenant is safe.
-tenant_user.tasks.to_a # the query based on safe record is safe.
+tenant_user.tasks.to_a # the query based on a safe record is safe.
 current_user.tasks.to_a # devise current_user is safe and the query based on it is safe.
 ```
 
-### temporarlly disable tenant check
+### Temporarlly disable tenant check
 
 ```ruby
 users = TenantCheck.ignored { User.all.to_a }
@@ -74,8 +75,12 @@ After checking out the repo, run `bin/setup` to install dependencies. Then, run 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
 ## TODO
-- test for various rails versions
-- support calculation methods
+- Relation method to mark as safe
+- Option to raise exception on unsafe query
+- Support `joins`
+- Support `or`
+- Support `update_all`, `destroy_all` and `delete_all`
+- Support calculation methods
 
 ## Contributing
 
