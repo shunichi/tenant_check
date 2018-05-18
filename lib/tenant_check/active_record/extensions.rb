@@ -107,54 +107,6 @@ module TenantCheck
       end
     end
 
-    module ActiveRecordExtension
-      def find_by_sql(sql, binds = [], preparable: nil, &block)
-        puts '************************* find_by_sql'
-        puts caller
-        puts '************************* sql'
-        pp sql
-        puts '************************* binds'
-        pp binds
-        puts '************************* to_sql'
-        puts connection.to_sql(sql, binds)
-        puts '************************* dump_arel'
-        dump_arel(sql)
-        super
-      end
-
-      def dump_arel(arel, depth = 0)
-        case arel
-        when Array
-          arel.each do |node|
-            dump_arel(node, depth + 1)
-          end
-        when ::Arel::SelectManager
-          indent_puts(depth, '[SelectManager]')
-          dump_arel(arel.ast, depth + 1)
-          pp arel
-        when ::Arel::Nodes::SelectStatement
-          indent_puts(depth, '[SelectStatement]')
-          dump_arel(arel.cores, depth + 1)
-        when ::Arel::Nodes::SelectCore
-          indent_puts(depth, '[SelectCore]')
-          indent_puts(depth + 1, 'projections=')
-          dump_arel(arel.projections, depth + 1)
-          indent_puts(depth + 1, 'join_source=')
-          dump_arel(arel.source, depth + 2)
-          indent_puts(depth + 1, 'wheres=')
-          dump_arel(arel.wheres, depth + 1)
-        when ::Arel::Nodes::Node
-          indent_puts(depth, "[#{arel.class}]")
-        when ::Arel::Attributes::Attribute
-          indent_puts(depth, "[#{arel.class}]")
-        end
-      end
-
-      def indent_puts(depth, str)
-        puts '  ' * depth + str
-      end
-    end
-
     class << self
       def apply_patch
         ::ActiveRecord::Base.include TenantMethodExtension
