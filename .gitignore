@@ -7,7 +7,7 @@
 /spec/reports/
 /tmp/
 /.vscode
-Gemfile.lock
+Gemfile*.lock
 .solargraph.yml
 
 # rspec failure tracking
