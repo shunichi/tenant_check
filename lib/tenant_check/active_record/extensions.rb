@@ -33,7 +33,7 @@ module TenantCheck
       private
 
       def check_tenant_safety(sql_descpription = nil)
-        return true if TenantSafetyCheck.safe_preloading || klass.name == ::TenantCheck.tenant_class_name
+        return true if TenantSafetyCheck.safe_preloading || klass.name == ::TenantCheck.tenant_class_name || _tenant_safe_mark?
         return true if respond_to?(:proxy_association) && proxy_association.owner._tenant_check_safe
         unless tenant_safe_where_clause?(where_clause)
           c = caller
@@ -56,7 +56,7 @@ module TenantCheck
       end
     end
 
-    module CollectionProxyExtension
+    module CollectionProxyCheck
       include TenantSafetyCheck
 
       def load_target
@@ -76,7 +76,26 @@ module TenantCheck
       end
     end
 
-    module RelationExtension
+    module BaseClassMethods
+      def mark_as_tenant_safe
+        relation = all
+        relation.mark_as_tenant_safe
+        relation
+      end
+    end
+
+    module RelationMethods
+      def mark_as_tenant_safe
+        @_tenant_safe_mark = true
+        self
+      end
+
+      def _tenant_safe_mark?
+        @_tenant_safe_mark
+      end
+    end
+
+    module RelationCheck
       include TenantSafetyCheck
 
       def pluck(*column_names)
@@ -84,6 +103,18 @@ module TenantCheck
         return super if has_include?(column_names.first)
         check_tenant_safety('pluck')
         super
+      end
+
+      def except(*args)
+        new_relation = super
+        new_relation.mark_as_tenant_safe if _tenant_safe_mark?
+        new_relation
+      end
+
+      def only(*args)
+        new_relation = super
+        new_relation.mark_as_tenant_safe if _tenant_safe_mark?
+        new_relation
       end
 
       private
@@ -109,9 +140,14 @@ module TenantCheck
 
     class << self
       def apply_patch
-        ::ActiveRecord::Base.include TenantMethodExtension
-        ::ActiveRecord::Relation.prepend RelationExtension
-        ::ActiveRecord::Associations::CollectionProxy.prepend CollectionProxyExtension
+        ::ActiveRecord::Base.extend ::TenantCheck::ActiveRecord::BaseClassMethods
+        ::ActiveRecord::Relation.prepend ::TenantCheck::ActiveRecord::RelationMethods
+      end
+
+      def apply_check_patch
+        ::ActiveRecord::Base.include ::TenantCheck::ActiveRecord::TenantMethodExtension
+        ::ActiveRecord::Relation.prepend ::TenantCheck::ActiveRecord::RelationCheck
+        ::ActiveRecord::Associations::CollectionProxy.prepend ::TenantCheck::ActiveRecord::CollectionProxyCheck
       end
     end
   end

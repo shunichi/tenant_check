@@ -62,6 +62,18 @@ tenant_user.tasks.to_a # the query based on a safe record is safe.
 current_user.tasks.to_a # devise current_user is safe and the query based on it is safe.
 ```
 
+### Mark relations as tenant safe
+
+```ruby
+  # safe relations get no warnings.
+  users = User.all.mark_as_tenant_safe.to_a
+  user = User.mark_as_tenant_safe.first
+  tasks = user.tasks.to_a # no warnings since user is safe
+
+  # unsafe relation gets warnings.
+  User.all.mark_as_tenant_safe.where('id > 3').to_a # method chain after mark_as_tenant_safe is unsafe.
+```
+
 ### Temporarlly disable tenant check
 
 ```ruby
@@ -75,12 +87,11 @@ After checking out the repo, run `bin/setup` to install dependencies. Then, run 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
 ## TODO
-- Relation method to mark as safe
 - Option to raise exception on unsafe query
-- Support `joins`
-- Support `or`
 - Support `update_all`, `destroy_all` and `delete_all`
 - Support calculation methods
+- Support `joins`
+- Support `or`
 
 ## Contributing
 

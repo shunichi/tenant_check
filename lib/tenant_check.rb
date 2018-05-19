@@ -19,7 +19,7 @@ module TenantCheck
       @patched = true
       ActiveSupport.on_load(:active_record) do
         require 'tenant_check/active_record/extensions'
-        ::TenantCheck::ActiveRecord.apply_patch
+        ::TenantCheck::ActiveRecord.apply_check_patch
         ::Rails.configuration.middleware.use TenantCheck::Rack if defined? Rails
       end
     end
@@ -115,4 +115,9 @@ module TenantCheck
       @logger ||= defined?(Rails) ? Rails.logger : Logger.new(STDOUT)
     end
   end
+end
+
+ActiveSupport.on_load(:active_record) do
+  require 'tenant_check/active_record/extensions'
+  ::TenantCheck::ActiveRecord.apply_patch
 end

@@ -108,6 +108,47 @@ RSpec.describe TenantCheck do
     end
   end
 
+  describe 'mark_as_tenant_safe' do
+    it 'does not create notificaitons when the query is marked as tenant safe' do
+      expect {
+        Task.all.mark_as_tenant_safe.to_a
+      }.not_to change { TenantCheck.notifications.size }
+    end
+
+    it 'does not create notificaitons when pluck with marked as tenant safe' do
+      expect {
+        Task.mark_as_tenant_safe.pluck(:id)
+      }.not_to change { TenantCheck.notifications.size }
+    end
+    
+    it 'does not create notificaitons when eager_loading pluck with marked as tenant safe' do
+      expect {
+        Task.mark_as_tenant_safe.eager_load(:user).pluck(:id)
+      }.not_to change { TenantCheck.notifications.size }
+    end
+
+    it 'does not create notificaitons when the query on a collection proxy is marked as tenant safe' do
+      user = User.first
+      expect {
+        user.tasks.mark_as_tenant_safe.to_a
+      }.not_to change { TenantCheck.notifications.size }
+    end
+
+    it 'does not create notificaitons when the query on a collection proxy is marked as tenant safe' do
+      user = User.first
+      expect {
+        user.tasks.where('id > 0').mark_as_tenant_safe.to_a
+      }.not_to change { TenantCheck.notifications.size }
+    end
+
+    it 'does not create notificaitons when the query based on a tenant safe marked record' do
+      user = User.mark_as_tenant_safe.first
+      expect {
+        user.tasks.to_a
+      }.not_to change { TenantCheck.notifications.size }
+    end
+  end
+  
   context 'when safe_caller_patterns set' do
     def my_safe_method
       Task.first
