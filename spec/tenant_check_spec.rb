@@ -60,6 +60,12 @@ RSpec.describe TenantCheck do
     }.not_to change { TenantCheck.notifications.size }
   end
 
+  it 'does not create notificaitons when the query has a tenant condition' do
+    expect {
+      Task.where(tenant_id: 1).to_a
+    }.not_to change { TenantCheck.notifications.size }
+  end
+
   describe 'pluck' do
     it 'creates a notification when pluck without tenant conditions' do
       expect {
@@ -108,6 +114,14 @@ RSpec.describe TenantCheck do
     end
   end
 
+  xdescribe 'unsupported' do
+    it 'does not create notificaitons when the query has join with target tenant' do
+      expect {
+        Task.joins(:tenant).merge(Tenant.where(id: 1)).to_a
+      }.not_to change { TenantCheck.notifications.size }
+    end
+  end
+
   describe 'mark_as_tenant_safe' do
     it 'does not create notificaitons when the query is marked as tenant safe' do
       expect {
@@ -120,7 +134,7 @@ RSpec.describe TenantCheck do
         Task.mark_as_tenant_safe.pluck(:id)
       }.not_to change { TenantCheck.notifications.size }
     end
-    
+
     it 'does not create notificaitons when eager_loading pluck with marked as tenant safe' do
       expect {
         Task.mark_as_tenant_safe.eager_load(:user).pluck(:id)
