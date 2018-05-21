@@ -89,7 +89,6 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 ## TODO
 - Option to raise exception on unsafe query
 - Support `update_all`, `destroy_all` and `delete_all`
-- Support calculation methods
 - Support `joins`
 - Support `or`
 
