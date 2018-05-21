@@ -33,7 +33,9 @@ module TenantCheck
       private
 
       def check_tenant_safety(sql_descpription = nil)
-        return true if TenantSafetyCheck.internal_force_safe_scope? || klass.name == ::TenantCheck.tenant_class_name || _tenant_safe_mark?
+        if _tenant_safe_mark? || TenantSafetyCheck.internal_force_safe_scope? || klass.name == ::TenantCheck.tenant_class_name
+          return true
+        end
         return true if respond_to?(:proxy_association) && proxy_association.owner._tenant_check_safe
         unless tenant_safe_where_clause?(where_clause)
           c = caller
@@ -99,9 +101,20 @@ module TenantCheck
     module RelationCheck
       include TenantSafetyCheck
 
+      def calculate(operation, column_name)
+        return super unless ::TenantCheck.enable_and_started?
+        TenantSafetyCheck.internal_force_safe(_tenant_safe_mark?) do
+          # FIXME: Calling has_include? is highly implementation dependent. It subject to change by rails versions.
+          return super if has_include?(column_name)
+          check_tenant_safety(operation.to_s)
+          super
+        end
+      end
+
       def pluck(*column_names)
         return super unless ::TenantCheck.enable_and_started?
         TenantSafetyCheck.internal_force_safe(_tenant_safe_mark?) do
+          # FIXME: Calling has_include? is highly implementation dependent. It subject to change by rails versions.
           return super if has_include?(column_names.first)
           check_tenant_safety('pluck')
           super
