@@ -52,7 +52,7 @@ module TenantCheck
 
     def default_safe_caller_patterns
       [
-        /^.*devise.*`serialize_from_session'.*$/,
+        /^.*devise.*`serialize_from_(session|cookie)'.*$/,
       ]
     end
 
