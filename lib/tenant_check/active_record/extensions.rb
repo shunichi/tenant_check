@@ -23,7 +23,9 @@ module TenantCheck
         end
 
         def internal_force_safe(safe)
-          prev, self.internal_force_safe_scope = internal_force_safe_scope?, true if safe # rubocop:disable Style/ParallelAssignment
+          # rubocop:disable Style/ParallelAssignment
+          prev, self.internal_force_safe_scope = internal_force_safe_scope?, true if safe
+          # rubocop:enable Style/ParallelAssignment
           yield
         ensure
           self.internal_force_safe_scope = prev if safe
@@ -33,9 +35,8 @@ module TenantCheck
       private
 
       def check_tenant_safety(sql_descpription = nil)
-        if _tenant_safe_mark? || TenantSafetyCheck.internal_force_safe_scope? || klass.name == ::TenantCheck.tenant_class_name
-          return true
-        end
+        return true if _tenant_safe_mark? || TenantSafetyCheck.internal_force_safe_scope?
+        return true if klass.name == ::TenantCheck.tenant_class_name
         return true if respond_to?(:proxy_association) && proxy_association.owner._tenant_check_safe
         unless tenant_safe_where_clause?(where_clause)
           c = caller
