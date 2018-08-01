@@ -10,6 +10,10 @@ module TenantCheck
       included do
         attr_accessor :_tenant_check_safe
       end
+
+      def mark_as_tenant_safe
+        self._tenant_check_safe = true
+      end
     end
 
     module TenantSafetyCheck

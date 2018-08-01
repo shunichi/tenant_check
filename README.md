@@ -81,6 +81,26 @@ current_user.tasks.to_a # devise current_user is safe and the query based on it 
 users = TenantCheck.ignored { User.all.to_a }
 ```
 
+### With Warden::Test::Helpers
+`login_as` method bypass user query and set current user directly, so you should let TenantCheck know that the user is tenant safe.
+
+```ruby
+module WardenTestHelperExtension
+  def login_as(user, opts = {})
+    user.mark_as_tenant_safe
+    super
+  end
+end
+
+RSpec.configure do |config|
+  config.include Warden::Test::Helpers
+  config.include WardenTestHelperExtension
+  config.before :suite do
+    Warden.test_mode!
+  end
+end
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
