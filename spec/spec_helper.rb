@@ -18,7 +18,6 @@ end
 
 MODELS = File.join(File.dirname(__FILE__), 'models')
 $LOAD_PATH.unshift(MODELS)
-SUPPORT = File.join(File.dirname(__FILE__), 'support')
 
 ActiveRecord::Migration.verbose = false
 
@@ -26,7 +25,7 @@ Dir[File.join(MODELS, '*.rb')].sort.each do |filename|
   name = File.basename(filename, '.rb')
   autoload name.camelize.to_sym, name
 end
-require File.join(SUPPORT, 'sqlite_seed.rb')
+Dir[File.join(File.dirname(__FILE__), 'support/**/*.rb')].each { |f| require f }
 
 RSpec.configure do |config|
   config.before(:suite) do

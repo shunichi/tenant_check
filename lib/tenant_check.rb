@@ -11,6 +11,8 @@ module TenantCheck
 
   class << self
     attr_reader :enable
+    attr_writer :logger
+    attr_accessor :raise_error
 
     def enable=(value)
       @enable = value
@@ -109,12 +111,17 @@ module TenantCheck
       notifications.each do |notification|
         logger.warn(notification.message)
       end
+      if raise_error && (notification = notifications.first) # rubocop:disable Style/GuardClause
+        raise UnsafeQueryError, notification.message
+      end
     end
 
     def logger
       @logger ||= defined?(Rails) ? Rails.logger : Logger.new(STDOUT)
     end
   end
+
+  class UnsafeQueryError < ::StandardError; end
 end
 
 ActiveSupport.on_load(:active_record) do
