@@ -103,24 +103,35 @@ RSpec.describe TenantCheck do
     end
   end
 
-  context 'when safe_caller_patterns set' do
+  context 'when safe_caller_patterns is set' do
     def my_safe_method
       Task.first
     end
 
     around do |ex|
-      begin
-        prev = TenantCheck.safe_caller_patterns
-        TenantCheck.safe_caller_patterns = [/^.*`my_safe_method'.*$/]
-        ex.run
-      ensure
-        TenantCheck.safe_caller_patterns = prev
-      end
+      prev = TenantCheck.safe_caller_patterns
+      TenantCheck.safe_caller_patterns = [/^.*`my_safe_method'.*$/]
+      ex.run
+      TenantCheck.safe_caller_patterns = prev
     end
 
     it 'does not creates notification when safe caller pattern matched' do
       expect {
         my_safe_method
+      }.not_to change { TenantCheck.notifications.size }
+    end
+  end
+
+  context 'when tenant_safe_classes is set' do
+    around do |ex|
+      TenantCheck.add_safe_classes(User)
+      ex.run
+      TenantCheck.safe_class_names.clear
+    end
+
+    it 'does not creates notification' do
+      expect {
+        User.first
       }.not_to change { TenantCheck.notifications.size }
     end
   end

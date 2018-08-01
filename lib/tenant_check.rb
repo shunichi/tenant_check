@@ -40,6 +40,15 @@ module TenantCheck
       end
     end
 
+    def safe_class_names
+      @safe_class_names ||= Set.new
+    end
+
+    def add_safe_classes(klasses)
+      class_names = Array(klasses).map(&:name)
+      @safe_class_names = safe_class_names + class_names
+    end
+
     attr_accessor :tenant_class_name
     attr_writer :tenant_associations, :safe_caller_patterns
 
