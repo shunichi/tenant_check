@@ -21,13 +21,12 @@ RSpec.describe TenantCheck do
     }.not_to change { TenantCheck.notifications.size }
   end
 
-  it 'does not create notifications when the preload query have a tenant condition 2' do
+  it 'does not create notifications when the preload query have a tenant condition and an additional where clause' do
     tenant = Tenant.first
     tasks = nil
     expect {
       tasks = tenant.tasks.where(title: 'task 1-1').includes(:user).to_a
     }.not_to change { TenantCheck.notifications.size }
-    puts tasks.size
   end
 
   it 'creates a notificaiton when the query does not have a tenant condition' do
@@ -37,56 +36,6 @@ RSpec.describe TenantCheck do
     expect {
       User.first
     }.to change { TenantCheck.notifications.size }.by(1)
-  end
-
-  it 'creates a notification when update_all method is called based on tenant unsafe relation' do
-    expect {
-      Task.update_all(title: 'foo')
-    }.to change { TenantCheck.notifications.size }.by(1)
-    expect(Task.pluck(:title)).to eq(['foo'] * 3)
-  end
-
-  it 'does not creates a notification when update_all method is called based on tenant safe relation' do
-    tenant = Tenant.first
-    expect {
-      tenant.tasks.update_all(title: 'foo')
-    }.not_to change { TenantCheck.notifications.size }
-    expect(tenant.tasks.pluck(:title)).to eq(['foo'] * 2)
-  end
-
-  describe 'destroy_all' do
-    it 'creates a notification when destroy_all methos is called based on tenant unsafe relation' do
-      expect(Task.count).to eq 3
-      expect {
-        Task.destroy_all
-      }.to change { TenantCheck.notifications.size }.by(1)
-      expect(Task.count).to eq 0
-    end
-
-    it 'creates a notification when destroy_all methos is called based on tenant safe relation' do
-      tenant = Tenant.first
-      expect(tenant.tasks.count).to eq 2
-      expect {
-        tenant.tasks.destroy_all
-      }.not_to change { TenantCheck.notifications.size }
-      expect(tenant.tasks.count).to eq 0
-    end
-  end
-
-  describe 'delete_all' do
-    it 'creates a notification when delete_all methos is called based on tenant unsafe relation' do
-      expect {
-        Task.delete_all
-      }.to change { TenantCheck.notifications.size }.by(1) & change(Task, :count).from(3).to(0)
-    end
-
-    it 'creates a notification when delete_all methos is called based on tenant safe relation' do
-      tenant = Tenant.first
-      expect {
-        tenant.tasks.delete_all
-      }.not_to change { TenantCheck.notifications.size }
-      expect(tenant.tasks.count).to eq 0
-    end
   end
 
   it 'creates only one notificaiton when queries have same call stacks' do
@@ -121,6 +70,58 @@ RSpec.describe TenantCheck do
       expect {
         Task.joins(:tenant).merge(Tenant.where(id: 1)).to_a
       }.not_to change { TenantCheck.notifications.size }
+    end
+  end
+
+  describe 'update_all' do
+    it 'creates a notification when update_all method is called based on tenant unsafe relation' do
+      expect {
+        Task.update_all(title: 'foo')
+      }.to change { TenantCheck.notifications.size }.by(1)
+      expect(Task.pluck(:title)).to eq(['foo'] * 3)
+    end
+
+    it 'does not creates a notification when update_all method is called based on tenant safe relation' do
+      tenant = Tenant.first
+      expect {
+        tenant.tasks.update_all(title: 'foo')
+      }.not_to change { TenantCheck.notifications.size }
+      expect(tenant.tasks.pluck(:title)).to eq(['foo'] * 2)
+    end
+  end
+
+  describe 'destroy_all' do
+    it 'creates a notification when destroy_all methos is called based on tenant unsafe relation' do
+      expect(Task.count).to eq 3
+      expect {
+        Task.destroy_all
+      }.to change { TenantCheck.notifications.size }.by(1)
+      expect(Task.count).to eq 0
+    end
+
+    it 'creates a notification when destroy_all methos is called based on tenant safe relation' do
+      tenant = Tenant.first
+      expect(tenant.tasks.count).to eq 2
+      expect {
+        tenant.tasks.destroy_all
+      }.not_to change { TenantCheck.notifications.size }
+      expect(tenant.tasks.count).to eq 0
+    end
+  end
+
+  describe 'delete_all' do
+    it 'creates a notification when delete_all methos is called based on tenant unsafe relation' do
+      expect {
+        Task.delete_all
+      }.to change { TenantCheck.notifications.size }.by(1) & change(Task, :count).from(3).to(0)
+    end
+
+    it 'creates a notification when delete_all methos is called based on tenant safe relation' do
+      tenant = Tenant.first
+      expect {
+        tenant.tasks.delete_all
+      }.not_to change { TenantCheck.notifications.size }
+      expect(tenant.tasks.count).to eq 0
     end
   end
 
@@ -183,90 +184,6 @@ RSpec.describe TenantCheck do
       expect {
         User.first
       }.not_to change { TenantCheck.notifications.size }
-    end
-  end
-
-  describe '_tenant_check_safe' do
-    it 'is true when finding a tenant record' do
-      tenant = Tenant.first
-      expect(tenant._tenant_check_safe).to eq true
-    end
-
-    it 'is falsey when finding a non-tenant record' do
-      user = User.first
-      expect(user._tenant_check_safe).to be_falsey
-    end
-
-    it 'is true when finding tenant records' do
-      tenants = Tenant.all
-      expect(tenants).to be_kind_of(ActiveRecord::Relation)
-      expect(tenants).not_to be_kind_of(ActiveRecord::AssociationRelation)
-      expect(tenants).not_to be_kind_of(ActiveRecord::Associations::CollectionProxy)
-      expect(tenants.all?(&:_tenant_check_safe)).to eq true
-    end
-
-    it 'is falsey when finding non-tenant records' do
-      users = User.all
-      expect(users).to be_kind_of(ActiveRecord::Relation)
-      expect(users).not_to be_kind_of(ActiveRecord::AssociationRelation)
-      expect(users).not_to be_kind_of(ActiveRecord::Associations::CollectionProxy)
-      expect(users.none?(&:_tenant_check_safe)).to eq true
-    end
-
-    it 'is true when the association relation is based on a tenant' do
-      tenant = Tenant.first
-      relation = tenant.tasks.where('id > 0')
-      expect(relation).to be_kind_of(ActiveRecord::AssociationRelation)
-      tasks = relation.to_a
-      expect(tasks).not_to be_empty
-      expect(tasks.all?(&:_tenant_check_safe)).to eq true
-    end
-
-    it 'is true when the association relation is based on safe record' do
-      user = Tenant.first.users.first
-      expect(user._tenant_check_safe).to eq true
-      relation = user.tasks.where('id > 0')
-      expect(relation).to be_kind_of(ActiveRecord::AssociationRelation)
-      tasks = relation.to_a
-      expect(tasks).not_to be_empty
-      expect(tasks.all?(&:_tenant_check_safe)).to eq true
-    end
-
-    it 'is false when the association relation is based on unsafe record' do
-      user = User.first
-      expect(user._tenant_check_safe).to be_falsey
-      relation = user.tasks.where('id > 0')
-      expect(relation).to be_kind_of(ActiveRecord::AssociationRelation)
-      tasks = relation.to_a
-      expect(tasks).not_to be_empty
-      expect(tasks.none?(&:_tenant_check_safe)).to eq true
-    end
-
-    it 'is true when the collection proxy is based on a tenant' do
-      tenant = Tenant.first
-      relation = tenant.tasks
-      expect(relation).to be_kind_of(ActiveRecord::Associations::CollectionProxy)
-      tasks = relation.to_a
-      expect(tasks.all?(&:_tenant_check_safe)).to eq true
-    end
-
-    it 'is true when the collection proxy is based on safe record' do
-      user = Tenant.first.users.first
-      expect(user._tenant_check_safe).to eq true
-      relation = user.tasks
-      expect(relation).to be_kind_of(ActiveRecord::Associations::CollectionProxy)
-      tasks = relation.to_a
-      expect(tasks.all?(&:_tenant_check_safe)).to eq true
-    end
-
-    it 'is false when the collection proxy is based on unsafe record' do
-      user = User.first
-      expect(user._tenant_check_safe).to be_falsey
-      relation = user.tasks
-      expect(relation).to be_kind_of(ActiveRecord::Associations::CollectionProxy)
-      tasks = relation.to_a
-      expect(tasks).not_to be_empty
-      expect(tasks.none?(&:_tenant_check_safe)).to eq true
     end
   end
 end
