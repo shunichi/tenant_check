@@ -52,7 +52,7 @@ RSpec.describe TenantCheck do
     }.to change { TenantCheck.notifications.size }.by(1)
   end
 
-  it 'does not creates notifications when eager load query have a tenant condition' do
+  it 'does not create notifications when eager load query have a tenant condition' do
     tenant = Tenant.first
     expect {
       tenant.tasks.eager_load(:user).to_a
@@ -66,6 +66,13 @@ RSpec.describe TenantCheck do
   end
 
   xdescribe 'Not implemented' do
+    it 'creates a notification when the query have OR with unsafe query' do
+      tenant = Tenant.first
+      expect {
+        tenant.tasks.or(Task.where(title: 'foo')).to_a
+      }.to change { TenantCheck.notifications.size }
+    end
+
     it 'does not create notificaitons when the query has join with target tenant' do
       expect {
         Task.joins(:tenant).merge(Tenant.where(id: 1)).to_a
@@ -81,7 +88,7 @@ RSpec.describe TenantCheck do
       expect(Task.pluck(:title)).to eq(['foo'] * 3)
     end
 
-    it 'does not creates a notification when update_all method is called based on tenant safe relation' do
+    it 'does not create a notification when update_all method is called based on tenant safe relation' do
       tenant = Tenant.first
       expect {
         tenant.tasks.update_all(title: 'foo')
@@ -146,8 +153,16 @@ RSpec.describe TenantCheck do
       }.not_to change { TenantCheck.notifications.size }
     end
 
-    it 'does not create notificaitons when the query based on a tenant safe marked record' do
+    it 'does not create notificaitons when the query based on the record that a tenant safe query returns' do
       user = User.mark_as_tenant_safe.first
+      expect {
+        user.tasks.to_a
+      }.not_to change { TenantCheck.notifications.size }
+    end
+
+    it 'does not create notificaitons when the query based on a tenant safe marked record' do
+      user = User.first
+      user.mark_as_tenant_safe
       expect {
         user.tasks.to_a
       }.not_to change { TenantCheck.notifications.size }
@@ -166,7 +181,7 @@ RSpec.describe TenantCheck do
       TenantCheck.safe_caller_patterns = prev
     end
 
-    it 'does not creates notification when safe caller pattern matched' do
+    it 'does not create notification when safe caller pattern matched' do
       expect {
         my_safe_method
       }.not_to change { TenantCheck.notifications.size }
@@ -180,7 +195,7 @@ RSpec.describe TenantCheck do
       TenantCheck.safe_class_names.clear
     end
 
-    it 'does not creates notification' do
+    it 'does not create notification' do
       expect {
         User.first
       }.not_to change { TenantCheck.notifications.size }
