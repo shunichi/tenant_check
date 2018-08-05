@@ -39,6 +39,21 @@ RSpec.describe TenantCheck do
     }.to change { TenantCheck.notifications.size }.by(1)
   end
 
+  it 'creates a notification when update_all method is called based on tenant unsafe relation' do
+    expect {
+      Task.update_all(title: 'foo')
+    }.to change { TenantCheck.notifications.size }.by(1)
+    expect(Task.pluck(:title)).to eq(['foo'] * 3)
+  end
+
+  it 'does not creates a notification when update_all method is called based on tenant safe relation' do
+    tenant = Tenant.first
+    expect {
+      tenant.tasks.update_all(title: 'foo')
+    }.not_to change { TenantCheck.notifications.size }
+    expect(tenant.tasks.pluck(:title)).to eq(['foo'] * 2)
+  end
+
   it 'creates only one notificaiton when queries have same call stacks' do
     expect {
       (1..2).each do |i|

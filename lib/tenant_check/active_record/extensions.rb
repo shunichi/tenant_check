@@ -127,6 +127,12 @@ module TenantCheck
         end
       end
 
+      def update_all(updates)
+        return super unless ::TenantCheck.enable_and_started?
+        check_tenant_safety('update_all')
+        super
+      end
+
       private
 
       def exec_queries(&block)
@@ -153,10 +159,10 @@ module TenantCheck
       def apply_patch
         ::ActiveRecord::Base.extend ::TenantCheck::ActiveRecord::BaseClassMethods
         ::ActiveRecord::Relation.prepend ::TenantCheck::ActiveRecord::RelationMethods
+        ::ActiveRecord::Base.include ::TenantCheck::ActiveRecord::TenantMethodExtension
       end
 
       def apply_check_patch
-        ::ActiveRecord::Base.include ::TenantCheck::ActiveRecord::TenantMethodExtension
         ::ActiveRecord::Relation.prepend ::TenantCheck::ActiveRecord::RelationCheck
         ::ActiveRecord::Associations::CollectionProxy.prepend ::TenantCheck::ActiveRecord::CollectionProxyCheck
       end
