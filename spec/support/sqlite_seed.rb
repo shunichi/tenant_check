@@ -4,6 +4,12 @@ module Support
   module SqliteSeed
     module_function
 
+    def clear_db
+      Tenant.delete_all
+      User.delete_all
+      Task.delete_all
+    end
+
     def seed_db
       tenant_1 = Tenant.create!(name: 'tenant 1')
       tenant_2 = Tenant.create!(name: 'tenant 2')

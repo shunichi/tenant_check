@@ -54,6 +54,41 @@ RSpec.describe TenantCheck do
     expect(tenant.tasks.pluck(:title)).to eq(['foo'] * 2)
   end
 
+  describe 'destroy_all' do
+    it 'creates a notification when destroy_all methos is called based on tenant unsafe relation' do
+      expect(Task.count).to eq 3
+      expect {
+        Task.destroy_all
+      }.to change { TenantCheck.notifications.size }.by(1)
+      expect(Task.count).to eq 0
+    end
+
+    it 'creates a notification when destroy_all methos is called based on tenant safe relation' do
+      tenant = Tenant.first
+      expect(tenant.tasks.count).to eq 2
+      expect {
+        tenant.tasks.destroy_all
+      }.not_to change { TenantCheck.notifications.size }
+      expect(tenant.tasks.count).to eq 0
+    end
+  end
+
+  describe 'delete_all' do
+    it 'creates a notification when delete_all methos is called based on tenant unsafe relation' do
+      expect {
+        Task.delete_all
+      }.to change { TenantCheck.notifications.size }.by(1) & change(Task, :count).from(3).to(0)
+    end
+
+    it 'creates a notification when delete_all methos is called based on tenant safe relation' do
+      tenant = Tenant.first
+      expect {
+        tenant.tasks.delete_all
+      }.not_to change { TenantCheck.notifications.size }
+      expect(tenant.tasks.count).to eq 0
+    end
+  end
+
   it 'creates only one notificaiton when queries have same call stacks' do
     expect {
       (1..2).each do |i|

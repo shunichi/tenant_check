@@ -4,11 +4,19 @@ require 'active_support/concern'
 
 module TenantCheck
   module ActiveRecord
-    module TenantMethodExtension
+    module BaseMethods
       extend ActiveSupport::Concern
 
       included do
         attr_accessor :_tenant_check_safe
+      end
+
+      module ClassMethods
+        def mark_as_tenant_safe
+          relation = all
+          relation.mark_as_tenant_safe
+          relation
+        end
       end
 
       def mark_as_tenant_safe
@@ -33,6 +41,23 @@ module TenantCheck
           yield
         ensure
           self.internal_force_safe_scope = prev if safe
+        end
+
+        def internal_ignore_delete_all_scope?
+          Thread.current[:tenant_check_internal_ignore_delete_all_scope]
+        end
+
+        def internal_ignore_delete_all_scope=(value)
+          Thread.current[:tenant_check_internal_ignore_delete_all_scope] = value
+        end
+
+        def internal_ignore_delete_all
+          # rubocop:disable Style/ParallelAssignment
+          prev, self.internal_ignore_delete_all_scope = internal_ignore_delete_all_scope?, true
+          # rubocop:enable Style/ParallelAssignment
+          yield
+        ensure
+          self.internal_ignore_delete_all_scope = prev
         end
       end
 
@@ -85,14 +110,6 @@ module TenantCheck
       end
     end
 
-    module BaseClassMethods
-      def mark_as_tenant_safe
-        relation = all
-        relation.mark_as_tenant_safe
-        relation
-      end
-    end
-
     module RelationMethods
       def mark_as_tenant_safe
         @_tenant_safe_mark = true
@@ -101,6 +118,15 @@ module TenantCheck
 
       def _tenant_safe_mark?
         @_tenant_safe_mark
+      end
+    end
+
+    module BaseCheck
+      def destroy
+        # NOTE: ActiveRecord::Base#destory call delete_all internally.
+        TenantSafetyCheck.internal_ignore_delete_all do
+          super
+        end
       end
     end
 
@@ -133,6 +159,13 @@ module TenantCheck
         super
       end
 
+      def delete_all
+        return super unless ::TenantCheck.enable_and_started?
+        return super if TenantSafetyCheck.internal_ignore_delete_all_scope?
+        check_tenant_safety('delete_all')
+        super
+      end
+
       private
 
       def exec_queries(&block)
@@ -157,12 +190,12 @@ module TenantCheck
 
     class << self
       def apply_patch
-        ::ActiveRecord::Base.extend ::TenantCheck::ActiveRecord::BaseClassMethods
+        ::ActiveRecord::Base.include ::TenantCheck::ActiveRecord::BaseMethods
         ::ActiveRecord::Relation.prepend ::TenantCheck::ActiveRecord::RelationMethods
-        ::ActiveRecord::Base.include ::TenantCheck::ActiveRecord::TenantMethodExtension
       end
 
       def apply_check_patch
+        ::ActiveRecord::Base.prepend ::TenantCheck::ActiveRecord::BaseCheck
         ::ActiveRecord::Relation.prepend ::TenantCheck::ActiveRecord::RelationCheck
         ::ActiveRecord::Associations::CollectionProxy.prepend ::TenantCheck::ActiveRecord::CollectionProxyCheck
       end

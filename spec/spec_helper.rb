@@ -30,12 +30,13 @@ Dir[File.join(File.dirname(__FILE__), 'support/**/*.rb')].each { |f| require f }
 RSpec.configure do |config|
   config.before(:suite) do
     Support::SqliteSeed.setup_db
-    Support::SqliteSeed.seed_db
     ::TenantCheck.tenant_class = Tenant
     ::TenantCheck.enable = true
   end
 
   config.before do
+    Support::SqliteSeed.clear_db
+    Support::SqliteSeed.seed_db
     ::TenantCheck.start
   end
 end
