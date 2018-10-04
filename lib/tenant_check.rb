@@ -12,7 +12,7 @@ module TenantCheck
   class << self
     attr_reader :enable
     attr_writer :logger
-    attr_accessor :raise_error
+    attr_accessor :raise_error, :full_backtrace
 
     def enable=(value)
       @enable = value

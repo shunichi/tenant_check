@@ -14,7 +14,7 @@ module TenantCheck
     end
 
     def filtered_callers_or_callers
-      filtered_callers.empty? ? callers : filtered_callers
+      filtered_callers.empty? || TenantCheck.full_backtrace ? callers : filtered_callers
     end
 
     def eql?(other)
