@@ -59,6 +59,23 @@ module TenantCheck
         ensure
           self.internal_ignore_delete_all_scope = prev
         end
+
+        def internal_ignore_update_all_scope?
+          Thread.current[:tenant_check_internal_ignore_update_all_scope]
+        end
+
+        def internal_ignore_update_all_scope=(value)
+          Thread.current[:tenant_check_internal_ignore_update_all_scope] = value
+        end
+
+        def internal_ignore_update_all
+          # rubocop:disable Style/ParallelAssignment
+          prev, self.internal_ignore_update_all_scope = internal_ignore_update_all_scope?, true
+          # rubocop:enable Style/ParallelAssignment
+          yield
+        ensure
+          self.internal_ignore_update_all_scope = prev
+        end
       end
 
       private
@@ -122,6 +139,13 @@ module TenantCheck
     end
 
     module BaseCheck
+      def touch(*args)
+        # NOTE: ActiveRecord::Base#touch call update_all internally.
+        TenantSafetyCheck.internal_ignore_update_all do
+          super
+        end
+      end
+
       def destroy
         # NOTE: ActiveRecord::Base#destory call delete_all internally.
         TenantSafetyCheck.internal_ignore_delete_all do
@@ -155,6 +179,7 @@ module TenantCheck
 
       def update_all(updates)
         return super unless ::TenantCheck.enable_and_started?
+        return super if TenantSafetyCheck.internal_ignore_update_all_scope?
         check_tenant_safety('update_all')
         super
       end
