@@ -65,6 +65,13 @@ RSpec.describe TenantCheck do
     }.not_to change { TenantCheck.notifications.size }
   end
 
+  it 'does not creates notifications when the query is based on new record' do
+    user = User.new
+    expect {
+      user.tasks.to_a
+    }.not_to change { TenantCheck.notifications.size }
+  end
+
   xdescribe 'Not implemented' do
     it 'creates a notification when the query have OR with unsafe query' do
       tenant = Tenant.first

@@ -84,7 +84,7 @@ module TenantCheck
         return true if _tenant_safe_mark? || TenantSafetyCheck.internal_force_safe_scope?
         return true if klass.name == ::TenantCheck.tenant_class_name
         return true if ::TenantCheck.safe_class_names.member?(klass.name)
-        return true if respond_to?(:proxy_association) && proxy_association.owner._tenant_check_safe
+        return true if respond_to?(:proxy_association) && (proxy_association.owner._tenant_check_safe || proxy_association.owner.new_record?)
         unless tenant_safe_where_clause?(where_clause)
           c = caller
           lines = c.join("\n")
