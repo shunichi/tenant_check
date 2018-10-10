@@ -24,6 +24,30 @@ module TenantCheck
       end
     end
 
+    module DeviseMethods
+      extend ActiveSupport::Concern
+
+      module ClassMethods
+        def tenant_safe_devise_methods
+          %i(serialize_from_session serialize_from_cookie reset_password_by_token find_by_invitation_token unlock_access_by_token).each do |method_name|
+            wrap_as_tenant_force_safe_scope(method_name)
+          end
+        end
+
+        def wrap_as_tenant_force_safe_scope(method_name)
+          if respond_to?(method_name)
+            class_eval <<-METHODS, __FILE__, __LINE__ + 1
+              def self.#{method_name}(*args)
+                TenantCheck::ActiveRecord::TenantSafetyCheck.internal_force_safe(true) do
+                  super
+                end
+              end
+            METHODS
+          end
+        end
+      end
+    end
+
     module TenantSafetyCheck
       class << self
         def internal_force_safe_scope?
@@ -216,6 +240,7 @@ module TenantCheck
     class << self
       def apply_patch
         ::ActiveRecord::Base.include ::TenantCheck::ActiveRecord::BaseMethods
+        ::ActiveRecord::Base.include ::TenantCheck::ActiveRecord::DeviseMethods
         ::ActiveRecord::Relation.prepend ::TenantCheck::ActiveRecord::RelationMethods
       end
 
