@@ -83,5 +83,23 @@ RSpec.describe 'Internal flag' do
       expect(tasks).not_to be_empty
       expect(tasks.none?(&:_tenant_check_safe)).to eq true
     end
+
+    it 'is true when belongs_to association owner is safe' do
+      tenant = Tenant.first
+      task = tenant.tasks.first
+      user = task.user
+      expect(user._tenant_check_safe).to eq true
+    end
+
+    it 'is falsey when belongs_to association owner is unsafe' do
+      task = Task.first
+      expect(task._tenant_check_safe).to be_falsey
+      user = task.reload.user
+      expect(user._tenant_check_safe).to be_falsey
+    end
+
+    # TODO: test belongs_to polymorphic association
+    # TODO: test has_one association
+    # TODO: test has_one_through association
   end
 end

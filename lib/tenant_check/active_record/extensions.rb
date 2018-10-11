@@ -130,6 +130,22 @@ module TenantCheck
       end
     end
 
+    module SingularAssociationCheck
+      def load_target
+        return super unless ::TenantCheck.enable_and_started?
+        safe = check_tenant_safety
+        result = super
+        result.mark_as_tenant_safe if safe && result
+        result
+      end
+
+      def check_tenant_safety
+        return true if TenantSafetyCheck.internal_force_safe_scope?
+        return true if klass && ::TenantCheck.safe_class_names.member?(klass.name)
+        owner._tenant_check_safe || owner.new_record?
+      end
+    end
+
     module CollectionProxyCheck
       include TenantSafetyCheck
 
@@ -144,7 +160,7 @@ module TenantCheck
         end
         if safe
           Array(target).each do |record|
-            record._tenant_check_safe = true
+            record.mark_as_tenant_safe
           end
         end
         result
@@ -248,6 +264,7 @@ module TenantCheck
         ::ActiveRecord::Base.prepend ::TenantCheck::ActiveRecord::BaseCheck
         ::ActiveRecord::Relation.prepend ::TenantCheck::ActiveRecord::RelationCheck
         ::ActiveRecord::Associations::CollectionProxy.prepend ::TenantCheck::ActiveRecord::CollectionProxyCheck
+        ::ActiveRecord::Associations::SingularAssociation.prepend ::TenantCheck::ActiveRecord::SingularAssociationCheck
       end
     end
   end
