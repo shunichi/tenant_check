@@ -114,7 +114,7 @@ module TenantCheck
     end
 
     def notification?
-      !notifications.empty?
+      notifications && !notifications.empty?
     end
 
     def output_notifications
@@ -158,4 +158,9 @@ end
 ActiveSupport.on_load(:active_record) do
   require 'tenant_check/active_record/extensions'
   ::TenantCheck::ActiveRecord.apply_patch
+end
+
+ActiveSupport.on_load(:active_job) do
+  require 'tenant_check/active_job/extensions'
+  ::TenantCheck::ActiveJob.apply_patch
 end

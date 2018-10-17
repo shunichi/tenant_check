@@ -21,6 +21,7 @@ module TenantCheck
 
       def mark_as_tenant_safe
         self._tenant_check_safe = true
+        self
       end
     end
 
