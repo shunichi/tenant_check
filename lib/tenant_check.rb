@@ -121,6 +121,7 @@ module TenantCheck
       notifications.each do |notification|
         logger.warn(notification.message)
       end
+      call_notification_callbacks
       if raise_error && (notification = notifications.first) # rubocop:disable Style/GuardClause
         raise UnsafeQueryError, notification.message
       end
@@ -130,11 +131,24 @@ module TenantCheck
       @logger ||= defined?(Rails) ? Rails.logger : Logger.new(STDOUT)
     end
 
+    def on_notification(&block)
+      @callbacks ||= []
+      @callbacks.push(block)
+    end
+
     private
 
     def start_internal
       Thread.current[:tenant_check_start] = true
       Thread.current[:tenant_check_notifications] = Set.new
+    end
+
+    def call_notification_callbacks
+      @callbacks.each do |proc|
+        notifications.each do |notification|
+          proc.call(notification.to_h)
+        end
+      end
     end
   end
 

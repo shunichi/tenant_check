@@ -35,5 +35,14 @@ module TenantCheck
 
       EOS
     end
+
+    def to_h
+      {
+        class: base_class.to_s,
+        sql: sql,
+        stacktrace: filtered_callers,
+        full_stacktrace: callers,
+      }
+    end
   end
 end
