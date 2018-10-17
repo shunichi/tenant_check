@@ -29,21 +29,20 @@ module TenantCheck
 
       module ClassMethods
         def tenant_safe_devise_methods
-          %i(serialize_from_session serialize_from_cookie reset_password_by_token find_by_invitation_token unlock_access_by_token).each do |method_name|
+          %i[serialize_from_session serialize_from_cookie reset_password_by_token find_by_invitation_token unlock_access_by_token].each do |method_name|
             wrap_as_tenant_force_safe_scope(method_name)
           end
         end
 
         def wrap_as_tenant_force_safe_scope(method_name)
-          if respond_to?(method_name)
-            class_eval <<-METHODS, __FILE__, __LINE__ + 1
-              def self.#{method_name}(*args)
-                TenantCheck::ActiveRecord::TenantSafetyCheck.internal_force_safe(true) do
-                  super
-                end
+          return unless respond_to?(method_name)
+          class_eval <<-METHODS, __FILE__, __LINE__ + 1
+            def self.#{method_name}(*args)
+              TenantCheck::ActiveRecord::TenantSafetyCheck.internal_force_safe(true) do
+                super
               end
-            METHODS
-          end
+            end
+          METHODS
         end
       end
     end
@@ -159,9 +158,7 @@ module TenantCheck
           super
         end
         if safe
-          Array(target).each do |record|
-            record.mark_as_tenant_safe
-          end
+          Array(target).each(&:mark_as_tenant_safe)
         end
         result
       end
@@ -189,6 +186,13 @@ module TenantCheck
       def destroy
         # NOTE: ActiveRecord::Base#destory call delete_all internally.
         TenantSafetyCheck.internal_ignore_delete_all do
+          super
+        end
+      end
+
+      def update_columns(*args)
+        # NOTE: ActiveRecord::Base#update_columns call update_all internally.
+        TenantSafetyCheck.internal_ignore_update_all do
           super
         end
       end

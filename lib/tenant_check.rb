@@ -70,8 +70,11 @@ module TenantCheck
     end
 
     def start
-      Thread.current[:tenant_check_start] = true
-      Thread.current[:tenant_check_notifications] = Set.new
+      start_internal
+      return unless block_given?
+      yield
+      TenantCheck.output_notifications
+      self.end
     end
 
     def end
@@ -125,6 +128,13 @@ module TenantCheck
 
     def logger
       @logger ||= defined?(Rails) ? Rails.logger : Logger.new(STDOUT)
+    end
+
+    private
+
+    def start_internal
+      Thread.current[:tenant_check_start] = true
+      Thread.current[:tenant_check_notifications] = Set.new
     end
   end
 
