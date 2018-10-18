@@ -106,7 +106,7 @@ module TenantCheck
     end
 
     def notifications
-      Thread.current[:tenant_check_notifications]
+      Thread.current[:tenant_check_notifications] || Set.new
     end
 
     def add_notification(notification)
@@ -114,7 +114,7 @@ module TenantCheck
     end
 
     def notification?
-      notifications && !notifications.empty?
+      !notifications.empty?
     end
 
     def output_notifications
@@ -132,11 +132,14 @@ module TenantCheck
     end
 
     def on_notification(&block)
-      @callbacks ||= []
-      @callbacks.push(block)
+      callbacks.push(block)
     end
 
     private
+
+    def callbacks
+      @callbacks ||= []
+    end
 
     def start_internal
       Thread.current[:tenant_check_start] = true
@@ -144,7 +147,7 @@ module TenantCheck
     end
 
     def call_notification_callbacks
-      @callbacks.each do |proc|
+      callbacks.each do |proc|
         notifications.each do |notification|
           proc.call(notification.to_h)
         end
