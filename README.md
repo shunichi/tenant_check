@@ -1,5 +1,5 @@
 # TenantCheck
-[![Build Status](https://travis-ci.org/shunichi/tenant_check.svg?branch=master)](https://travis-ci.org/shunichi/tenant_check)
+[![test](https://github.com/shunichi/tenant_check/workflows/test/badge.svg)](https://github.com/shunichi/tenant_check/actions?query=workflow%3Atest)
 
 Detect tenant unsafe queries in Rails app.
 
